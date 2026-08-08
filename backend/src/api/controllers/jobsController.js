@@ -160,4 +160,4 @@ const jobsController = {
     }
 };
 
-modelule.exports = jobsController;
+module.exports = jobsController;
