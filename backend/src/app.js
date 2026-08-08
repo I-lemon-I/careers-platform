@@ -11,7 +11,7 @@ dotenv.config(); // Load environment variables from .env file
 
 const app = express(); // Create an instance of Express
 const PORT = process.env.PORT || 3000; // Set the port from environment variable or default to 3000
-
+const jobsRoutes = require('./api/routes/jobs');
 
 // Middleware setup - functions that will be executed for every incoming request
 app.use(helmet()); // Security middleware to set various HTTP headers. Protects against some well-known web vulnerabilities by setting HTTP headers appropriately.
@@ -31,7 +31,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-//app.use('/api/jobs', jobsRoutes); //app.use() - runs specific function for every request that matches indicated path
+app.use('/api/jobs', jobsRoutes); //app.use() - runs specific function for every request that matches indicated path
 
 //Error 404 handler
 app.use((req, res) => {
