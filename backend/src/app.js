@@ -11,13 +11,16 @@ dotenv.config(); // Load environment variables from .env file
 
 const app = express(); // Create an instance of Express
 const PORT = process.env.PORT || 3000; // Set the port from environment variable or default to 3000
+
 const jobsRoutes = require('./api/routes/jobs');
+const authRoutes = require('./api/routes/auth');
 
 // Middleware setup - functions that will be executed for every incoming request
 app.use(helmet()); // Security middleware to set various HTTP headers. Protects against some well-known web vulnerabilities by setting HTTP headers appropriately.
 app.use(cors()); // Enable Cross-Origin Resource Sharing (CORS) for all routes. This allows for API to be accessed from different domains.
 app.use(express.json()); // Parse incoming requests with JSON payloads. This middleware is available in Express 4.16.0 and later.
 app.use(morgan('dev')); // HTTP request logger middleware for node.js. It will log details of incoming requests to the console in 'dev' format, which provides concise output colored by response status for development use.
+app.use('/api/auth', authRoutes);
 
 //When someone wants to visit the .../health path of the app,
 //Express will send a JSON response (res) with some data such as status, timestamp or environment
