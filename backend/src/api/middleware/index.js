@@ -1,3 +1,5 @@
+ const jwt = require('jsonwebtoken');
+ 
  const authenticate = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
@@ -6,20 +8,35 @@
     }
 
     const token = authHeader.split(' ')[1];
-    const validToken = process.env.API_TOKEN;
-
-    if (!token || token !== validToken) {
-        return res.status(403).json({ success: false, message: 'Invalid or expired token.' });
+    
+    if (!token) {
+        return res.status(403).json({ success: false, message: 'Invalid token format. Expected: Bearer <token>' });
     }
 
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
     req.user = {
-        id: 1,
-        email: 'admin@careers.com',
-        role: 'admin'
-    }
-
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role
+    };
+    
     next();
- }
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token has expired. Please login again.'
+      });
+    }
+    
+    return res.status(403).json({
+      success: false,
+      message: 'Invalid or expired token.'
+    });
+  }
+};
 
  const validateJob = (req, res, next) => {
     const { title, department, location, description } = req.body;
