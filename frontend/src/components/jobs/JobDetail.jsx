@@ -1,19 +1,75 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../api/client';
 
-const JobDetail = ({ job, onDelete }) => {
+const JobDetail = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchJob = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await api.get(`/jobs/${id}`);
+        if (!cancelled) setJob(response.data.data);
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err.response?.status === 404
+              ? 'Job not found'
+              : 'Failed to load job'
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchJob();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
   const handleEdit = () => {
-    navigate(`/jobs/${job.id}/edit`);
+    navigate(`/jobs/${id}/edit`);
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this job?')) {
-      await onDelete(job.id);
+    if (!window.confirm('Are you sure you want to delete this job?')) return;
+    try {
+      await api.delete(`/jobs/${id}`);
+      navigate('/jobs');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete job');
     }
   };
+
+  if (loading) {
+    return <div style={styles.status}>Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div style={styles.container}>
+        <button onClick={() => navigate('/jobs')} style={styles.backBtn}>
+          Back to Jobs
+        </button>
+        <div style={styles.status}>{error}</div>
+      </div>
+    );
+  }
+
+  if (!job) return null;
 
   return (
     <div style={styles.container}>
@@ -25,10 +81,10 @@ const JobDetail = ({ job, onDelete }) => {
         <div style={styles.header}>
           <h1 style={styles.title}>{job.title}</h1>
           <div style={styles.badges}>
-            <span style={{...styles.badge, ...styles[job.type?.toLowerCase()]}}>
+            <span style={{ ...styles.badge, ...styles[job.type?.toLowerCase()] }}>
               {job.type || 'Full-time'}
             </span>
-            <span style={{...styles.badge, ...styles[job.status]}}>
+            <span style={{ ...styles.badge, ...styles[job.status] }}>
               {job.status || 'active'}
             </span>
           </div>
@@ -36,7 +92,7 @@ const JobDetail = ({ job, onDelete }) => {
 
         <div style={styles.meta}>
           <span style={styles.department}>Department: {job.department}</span>
-          <span style={styles.location}>Location:{job.location}</span>
+          <span style={styles.location}>Location: {job.location}</span>
           <span style={styles.date}>
             Posted: {new Date(job.posted_date).toLocaleDateString()}
           </span>
@@ -52,7 +108,7 @@ const JobDetail = ({ job, onDelete }) => {
           <ul style={styles.requirements}>
             {job.requirements?.map((req, index) => (
               <li key={index} style={styles.requirementItem}>
-                OK {req}
+                {req}
               </li>
             ))}
           </ul>
@@ -79,6 +135,11 @@ const styles = {
     margin: '0 auto',
     padding: '24px 20px',
   },
+  status: {
+    textAlign: 'center',
+    padding: '40px',
+    color: '#718096',
+  },
   backBtn: {
     padding: '8px 16px',
     backgroundColor: 'transparent',
@@ -87,9 +148,6 @@ const styles = {
     fontSize: '16px',
     cursor: 'pointer',
     marginBottom: '20px',
-    ':hover': {
-      textDecoration: 'underline',
-    },
   },
   card: {
     backgroundColor: 'white',
@@ -120,26 +178,11 @@ const styles = {
     fontSize: '12px',
     fontWeight: '500',
   },
-  'full-time': {
-    backgroundColor: '#e8f5e9',
-    color: '#2e7d32',
-  },
-  'part-time': {
-    backgroundColor: '#fff3e0',
-    color: '#e65100',
-  },
-  contract: {
-    backgroundColor: '#e3f2fd',
-    color: '#0d47a1',
-  },
-  active: {
-    backgroundColor: '#c8e6c9',
-    color: '#1b5e20',
-  },
-  closed: {
-    backgroundColor: '#ffcdd2',
-    color: '#b71c1c',
-  },
+  'full-time': { backgroundColor: '#e8f5e9', color: '#2e7d32' },
+  'part-time': { backgroundColor: '#fff3e0', color: '#e65100' },
+  contract: { backgroundColor: '#e3f2fd', color: '#0d47a1' },
+  active: { backgroundColor: '#c8e6c9', color: '#1b5e20' },
+  closed: { backgroundColor: '#ffcdd2', color: '#b71c1c' },
   meta: {
     display: 'flex',
     gap: '16px',
@@ -154,24 +197,11 @@ const styles = {
     borderRadius: '12px',
     color: '#2b6cb0',
   },
-  location: {
-    color: '#718096',
-  },
-  date: {
-    color: '#a0aec0',
-  },
-  section: {
-    marginTop: '24px',
-  },
-  description: {
-    fontSize: '16px',
-    lineHeight: '1.6',
-    color: '#4a5568',
-  },
-  requirements: {
-    listStyle: 'none',
-    padding: '0',
-  },
+  location: { color: '#718096' },
+  date: { color: '#a0aec0' },
+  section: { marginTop: '24px' },
+  description: { fontSize: '16px', lineHeight: '1.6', color: '#4a5568' },
+  requirements: { listStyle: 'none', padding: '0' },
   requirementItem: {
     padding: '8px 0',
     color: '#4a5568',
@@ -193,10 +223,6 @@ const styles = {
     borderRadius: '6px',
     fontSize: '16px',
     cursor: 'pointer',
-    transition: 'background-color 0.2s',
-    ':hover': {
-      backgroundColor: '#3182ce',
-    },
   },
   deleteBtn: {
     padding: '10px 24px',
@@ -206,10 +232,6 @@ const styles = {
     borderRadius: '6px',
     fontSize: '16px',
     cursor: 'pointer',
-    transition: 'background-color 0.2s',
-    ':hover': {
-      backgroundColor: '#c53030',
-    },
   },
 };
 

@@ -1,19 +1,59 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import api from '../../api/client';
 
-const JobForm = ({ initialData, onSubmit, isEditing }) => {
+const emptyForm = {
+  title: '',
+  department: '',
+  location: '',
+  type: 'Full-time',
+  description: '',
+  requirements: '',
+  status: 'active',
+};
+
+const JobForm = () => {
+  const { id } = useParams();
+  const isEditing = Boolean(id);
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    title: initialData?.title || '',
-    department: initialData?.department || '',
-    location: initialData?.location || '',
-    type: initialData?.type || 'Full-time',
-    description: initialData?.description || '',
-    requirements: initialData?.requirements?.join('\n') || '',
-    status: initialData?.status || 'active',
-  });
+
+  const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(isEditing);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    let cancelled = false;
+    const fetchJob = async () => {
+      setFetching(true);
+      try {
+        const response = await api.get(`/jobs/${id}`);
+        const job = response.data.data;
+        if (!cancelled) {
+          setFormData({
+            title: job.title || '',
+            department: job.department || '',
+            location: job.location || '',
+            type: job.type || 'Full-time',
+            description: job.description || '',
+            requirements: job.requirements?.join('\n') || '',
+            status: job.status || 'active',
+          });
+        }
+      } catch (err) {
+        if (!cancelled) setError('Failed to load job for editing');
+      } finally {
+        if (!cancelled) setFetching(false);
+      }
+    };
+
+    fetchJob();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, isEditing]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,16 +70,26 @@ const JobForm = ({ initialData, onSubmit, isEditing }) => {
         ...formData,
         requirements: formData.requirements
           .split('\n')
-          .filter(req => req.trim() !== ''),
+          .filter((req) => req.trim() !== ''),
       };
-      await onSubmit(dataToSubmit);
+
+      if (isEditing) {
+        await api.put(`/jobs/${id}`, dataToSubmit);
+      } else {
+        await api.post('/jobs', dataToSubmit);
+      }
+
       navigate('/jobs');
     } catch (err) {
-      setError(err.message || 'Failed to save job');
+      setError(err.response?.data?.message || 'Failed to save job');
     } finally {
       setLoading(false);
     }
   };
+
+  if (fetching) {
+    return <div style={styles.status}>Loading...</div>;
+  }
 
   return (
     <div style={styles.container}>
@@ -133,16 +183,14 @@ const JobForm = ({ initialData, onSubmit, isEditing }) => {
           </div>
 
           <div style={styles.field}>
-            <label style={styles.label}>
-              Requirements (one per line)
-            </label>
+            <label style={styles.label}>Requirements (one per line)</label>
             <textarea
               name="requirements"
               value={formData.requirements}
               onChange={handleChange}
               style={styles.textarea}
               rows="4"
-              placeholder="5+ years experience&#10;Node.js&#10;Vue.js"
+              placeholder={'5+ years experience\nNode.js\nVue.js'}
             />
           </div>
 
@@ -154,12 +202,8 @@ const JobForm = ({ initialData, onSubmit, isEditing }) => {
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              style={styles.submitBtn}
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : (isEditing ? 'Update Job' : 'Create Job')}
+            <button type="submit" style={styles.submitBtn} disabled={loading}>
+              {loading ? 'Saving...' : isEditing ? 'Update Job' : 'Create Job'}
             </button>
           </div>
         </form>
@@ -169,11 +213,8 @@ const JobForm = ({ initialData, onSubmit, isEditing }) => {
 };
 
 const styles = {
-  container: {
-    maxWidth: '800px',
-    margin: '0 auto',
-    padding: '24px 20px',
-  },
+  container: { maxWidth: '800px', margin: '0 auto', padding: '24px 20px' },
+  status: { textAlign: 'center', padding: '40px', color: '#718096' },
   backBtn: {
     padding: '8px 16px',
     backgroundColor: 'transparent',
@@ -182,9 +223,6 @@ const styles = {
     fontSize: '16px',
     cursor: 'pointer',
     marginBottom: '20px',
-    ':hover': {
-      textDecoration: 'underline',
-    },
   },
   card: {
     backgroundColor: 'white',
@@ -192,11 +230,7 @@ const styles = {
     padding: '40px',
     boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
   },
-  title: {
-    margin: '0 0 24px 0',
-    fontSize: '24px',
-    color: '#2d3748',
-  },
+  title: { margin: '0 0 24px 0', fontSize: '24px', color: '#2d3748' },
   error: {
     backgroundColor: '#fed7d7',
     color: '#c53030',
@@ -204,26 +238,10 @@ const styles = {
     borderRadius: '6px',
     marginBottom: '16px',
   },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
-  row: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '16px',
-  },
-  field: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-  },
-  label: {
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#4a5568',
-  },
+  form: { display: 'flex', flexDirection: 'column', gap: '16px' },
+  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' },
+  field: { display: 'flex', flexDirection: 'column', gap: '4px' },
+  label: { fontSize: '14px', fontWeight: '500', color: '#4a5568' },
   input: {
     padding: '10px 12px',
     border: '1px solid #e2e8f0',
@@ -268,14 +286,6 @@ const styles = {
     borderRadius: '6px',
     fontSize: '16px',
     cursor: 'pointer',
-    transition: 'background-color 0.2s',
-    ':hover': {
-      backgroundColor: '#3182ce',
-    },
-    ':disabled': {
-      opacity: 0.7,
-      cursor: 'not-allowed',
-    },
   },
 };
 
