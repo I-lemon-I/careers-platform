@@ -1,29 +1,19 @@
-import { useState } from 'react';
-
-const JobFilters = ({ onFilterChange }) => {
-  const [search, setSearch] = useState('');
-  const [department, setDepartment] = useState('');
-  const [status, setStatus] = useState('');
+const JobFilters = ({ filters, onFilterChange }) => {
+  const { search, department, status } = filters;
 
   const handleSearch = (e) => {
-    setSearch(e.target.value);
-    onFilterChange({ search: e.target.value, department, status });
+    onFilterChange({ ...filters, search: e.target.value });
   };
 
   const handleDepartmentChange = (e) => {
-    setDepartment(e.target.value);
-    onFilterChange({ search, department: e.target.value, status });
+    onFilterChange({ ...filters, department: e.target.value });
   };
 
   const handleStatusChange = (e) => {
-    setStatus(e.target.value);
-    onFilterChange({ search, department, status: e.target.value });
+    onFilterChange({ ...filters, status: e.target.value });
   };
 
   const clearFilters = () => {
-    setSearch('');
-    setDepartment('');
-    setStatus('');
     onFilterChange({ search: '', department: '', status: '' });
   };
 
@@ -98,10 +88,6 @@ const styles = {
     borderRadius: '6px',
     fontSize: '14px',
     cursor: 'pointer',
-    transition: 'background-color 0.2s',
-    ':hover': {
-      backgroundColor: '#cbd5e0',
-    },
   },
 };
 

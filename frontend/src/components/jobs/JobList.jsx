@@ -4,11 +4,13 @@ import api from '../../api/client';
 import JobCard from './JobCard';
 import JobFilters from './JobFilters';
 
+const emptyFilters = { search: '', department: '', status: '' };
+
 const JobList = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState(emptyFilters);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,36 +39,32 @@ const JobList = () => {
     navigate(`/jobs/${id}`);
   };
 
-  if (loading) {
-    return <div style={styles.loading}>Loading jobs...</div>;
-  }
-
-  if (error) {
-    return <div style={styles.error}>{error}</div>;
-  }
-
   return (
     <div style={styles.container}>
       <div style={styles.header}>
         <h2 style={styles.title}>Available Positions</h2>
-        <button 
+        <button
           onClick={() => navigate('/jobs/create')}
           style={styles.createButton}
         >
-          + Post a Job
+          Post a Job
         </button>
       </div>
 
-      <JobFilters onFilterChange={handleFilterChange} />
+      <JobFilters filters={filters} onFilterChange={handleFilterChange} />
 
-      {jobs.length === 0 ? (
+      {loading ? (
+        <div style={styles.loading}>Loading jobs...</div>
+      ) : error ? (
+        <div style={styles.error}>{error}</div>
+      ) : jobs.length === 0 ? (
         <div style={styles.empty}>No jobs found</div>
       ) : (
         <div style={styles.grid}>
           {jobs.map((job) => (
-            <JobCard 
-              key={job.id} 
-              job={job} 
+            <JobCard
+              key={job.id}
+              job={job}
               onClick={() => handleJobClick(job.id)}
             />
           ))}
