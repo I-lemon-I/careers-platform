@@ -8,6 +8,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: careers_db
+      JWT_SECRET: o249-schg4923-cm2o-hv043-nb4389-e5dc-3q0923d32
+      JWT_EXPIRES_IN: 7d
     ports:
       - "5432:5432"
     volumes:
