@@ -1,21 +1,16 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: careers-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: careers_db
-      JWT_SECRET: o249-schg4923-cm2o-hv043-nb4389-e5dc-3q0923d32
-      JWT_EXPIRES_IN: 7d
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-careers_db}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,16 +21,18 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: careers-backend
     environment:
       NODE_ENV: development
       PORT: 3000
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: careers_db
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      API_TOKEN: careers-platform-secret-token-2024
+      DB_NAME: ${DB_NAME:-careers_db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the .env file (see .env.example)}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@careers.local}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-ChangeMe123!}
     ports:
       - "3000:3000"
     depends_on:
@@ -50,10 +47,10 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: careers-pgadmin
+    profiles: ["tools"]
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@careers.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@careers.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
     ports:
       - "5050:80"
     depends_on:

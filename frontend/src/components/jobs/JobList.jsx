@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import JobCard from './JobCard';
 import JobFilters from './JobFilters';
@@ -12,6 +13,8 @@ const JobList = () => {
   const [error, setError] = useState('');
   const [filters, setFilters] = useState(emptyFilters);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     fetchJobs();
@@ -43,12 +46,14 @@ const JobList = () => {
     <div style={styles.container}>
       <div style={styles.header}>
         <h2 style={styles.title}>Available Positions</h2>
-        <button
-          onClick={() => navigate('/jobs/create')}
-          style={styles.createButton}
-        >
-          Post a Job
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => navigate('/jobs/create')}
+            style={styles.createButton}
+          >
+            Post a Job
+          </button>
+        )}
       </div>
 
       <JobFilters filters={filters} onFilterChange={handleFilterChange} />

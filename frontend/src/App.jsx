@@ -36,7 +36,7 @@ function App() {
           <Route 
             path="/jobs/create" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute adminOnly>
                 <JobForm />
               </ProtectedRoute>
             } 
@@ -44,7 +44,7 @@ function App() {
           <Route 
             path="/jobs/:id/edit" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute adminOnly>
                 <JobForm />
               </ProtectedRoute>
             } 

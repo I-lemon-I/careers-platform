@@ -21,6 +21,12 @@ async function seed() {
   ];
 
   try {
+    const existing = await pool.query('SELECT COUNT(*)::int AS count FROM jobs');
+    if (existing.rows[0].count > 0) {
+      console.log('Jobs table already has data, skipping seed.');
+      return;
+    }
+
     for (const job of jobs) {
       const query = `
         INSERT INTO jobs (title, department, location, type, description, requirements)

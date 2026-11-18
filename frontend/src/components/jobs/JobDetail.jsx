@@ -114,7 +114,7 @@ const JobDetail = () => {
           </ul>
         </div>
 
-        {user && (
+        {user?.role === 'admin' && (
           <div style={styles.actions}>
             <button onClick={handleEdit} style={styles.editBtn}>
               Edit Job

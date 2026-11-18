@@ -7,6 +7,12 @@ const dotenv = require('dotenv');
 
 dotenv.config(); // Load environment variables from .env file
 
+// Fail fast: without a JWT secret, every login request would fail
+if (!process.env.JWT_SECRET) {
+    console.error('JWT_SECRET is not set. Copy .env.example to .env and set it.');
+    process.exit(1);
+}
+
 //const jobsRoutes = require('./api/routes/jobs'); //Import routes
 
 const app = express(); // Create an instance of Express
